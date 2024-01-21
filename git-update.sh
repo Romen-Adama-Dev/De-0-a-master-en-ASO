@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # Obtener la fecha actual en formato DD-MM-AA
 fecha=$(date +%d-%m-%y)
 
@@ -18,4 +17,3 @@ git commit -m "$mensaje_commit"
 
 # Empujar los cambios al repositorio remoto
 git push origin main
-
