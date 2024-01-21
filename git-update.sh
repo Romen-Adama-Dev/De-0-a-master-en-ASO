@@ -1,3 +1,25 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:a0a47507948a649dd87b21d6acd7a3fc7deec539fe7c9dd6dab1e42fbd4b5ce6
-size 1135
+#!/bin/bash
+
+# Obtener la fecha actual en formato DD-MM-AA
+fecha=$(date +%d-%m-%y)
+
+# Solicitar al usuario el tema o tarea del día
+echo "¿Cuál es el tema o tarea realizada en el día de hoy?"
+read topic
+
+# Mensaje de commit
+mensaje_commit="Actualización del repositorio el día $fecha sobre $topic"
+
+
+# Añadir todos los cambios al staging area
+git add .
+
+# Añadir los cambios al archivo .gitattributes
+git add .gitattributes
+
+# Commit de los cambios
+git commit -m "$mensaje_commit"
+
+# Empujar los cambios al repositorio remoto
+git push origin main
+
