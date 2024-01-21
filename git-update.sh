@@ -10,12 +10,8 @@ read topic
 # Mensaje de commit
 mensaje_commit="Actualización del repositorio el día $fecha sobre $topic"
 
-
 # Añadir todos los cambios al staging area
 git add .
-
-# Añadir los cambios al archivo .gitattributes
-git add .gitattributes
 
 # Commit de los cambios
 git commit -m "$mensaje_commit"
