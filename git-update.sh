@@ -16,4 +16,5 @@ git add .
 git commit -m "$mensaje_commit"
 
 # Empujar los cambios al repositorio remoto
+git pull origin main
 git push origin main
