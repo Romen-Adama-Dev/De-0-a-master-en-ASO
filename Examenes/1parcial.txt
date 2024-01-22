@@ -1,0 +1,156 @@
+Comandos
+
+Borre todos aquellos ficheros del directorio /tmp que no hayan sido accedidos en
+los últimos cinco días.
+find /tmp -atime +5 -type f -delete
+
+Obtenga el número de palabras del fichero “/usr/share/dict/words” en las que la
+letra “a” aparece al menos tres veces de forma no consecutiva.
+grep -E '^([^a]*a[^a]*){3,}$' /usr/share/dict/words | wc -l
+
+Obtenga una lista, ordenada alfabéticamente, de todos los usuarios que están
+ejecutando un proceso en el sistema. En la lista no deben aparecer usuarios repetidos.
+ps -eo user= | sort -u
+
+Obtenga el número de palabras del fichero “/usr/share/dict/words” en las que la
+letra “z” aparece al menos dos veces.
+grep -E '^([^z]*z[^z]*){2,}$' /usr/share/dict/words | wc -l
+
+Obtenga los ficheros pdf existentes en el directorio del usuario, ordenados de mayor
+a menor tamaño. La lista contendrá el tamaño y el nombre de cada fichero.
+find ~/ -name '*.pdf' -type f -exec du -h {} + | sort -rh
+
+Obtener el nombre del usuario que lleve más tiempo en sesión y la fecha y la hora
+en que inició su sesión.
+who -u | sort -rk 4,4 | head -n 1 | tr -s ' ' | cut -d ' ' -f 1,3-4
+
+Mostrar en pantalla los nombres de los ficheros bajo /usr/bin que contengan al
+menos una línea que comience por while.
+grep -rl '^while' /usr/bin/*
+
+Muestre los procesos que se están ejecutando ordenados por nombre y prioridad.
+ps -eo pid,ppid,user,cmd --sort=cmd,pri
+
+Mostrar en pantalla los tres usuarios con mayor número de procesos en ejecución, con
+el número de procesos y el usuario en cada línea.
+ps -eo user= | sort | uniq -c | sort -nr | head -n 3
+
+Encontrar los ficheros regulares que puedan ser ejecutados por algún usuario del
+sistema y estén ubicados en el directorio "/etc", o en cualquiera de sus descendientes, que contengan
+al principio de una de sus líneas la cadena "DEVICE=".
+find /etc -type f -perm /u=x,g=x,o=x -exec grep -l '^DEVICE=' {} +
+
+Encontrar en el sistema todos los nombres de fichero que se repitan dos o más
+veces. Para cada uno de estos ficheros debe mostrar una línea por pantalla que contenga, sólo y en el
+orden que se especifica, la siguiente información: nombre del fichero, número de veces con que se
+repite el nombre del fichero. Las líneas que se muestren deben estar ordenadas decrecientemente por
+el número de veces con que se repite el nombre del fichero.
+find . -type -f -exec basename {} ;\ | uniq -c | grep -E '^\s*[2-9]' | sort -nr
+
+Mostrar por pantalla los procesos del sistema que no son propiedad del usuario
+"root". Para cada uno de estos procesos se deberá mostrar, sólo y en el orden que se especifica, la
+siguiente información: usuario propietario, identificador de proceso y orden que dio lugar al proceso.
+El listado deberá estar ordenado alfabéticamente por el usuario propietario.
+ps -eo user,pid,cmd --sort=user | grep -v '^root'
+
+
+Indicar cuantos ficheros de dispositivo orientados a bloque existen en /dev.
+find /dev -type b | wc -l
+
+
+Desarrolle un script en bash al que se le pase como argumento una lista de nombres
+de usuario y nos indique, para cada nombre, si ese usuario posee en su directorio inicial algún fichero
+regular mayor de 12Kbytes.
+
+
+#!/bin/bash
+
+# Verificar el número correcto de argumentos
+if [ "$#" -eq 0 ]; then
+    echo "Error: Se debe proporcionar al menos un nombre de usuario como argumento."
+    exit 1
+fi
+
+# Iterar sobre los nombres de usuario proporcionados como argumentos
+for username in "$@"
+do
+    # Verificar si el usuario tiene algún fichero regular mayor de 12Kbytes en su directorio inicial
+    if find "/home/$username" -maxdepth 1 -type f -size +12k | read; then
+        echo "El usuario $username tiene al menos un fichero regular mayor de 12Kbytes en su directorio inicial."
+    else
+        echo "El usuario $username no tiene ficheros regulares mayores de 12Kbytes en su directorio inicial."
+    fi
+done
+
+# Finalizar correctamente
+exit 0
+
+Desarrolle un script en bash al que se le pase el nombre de un usuario del sistema y
+nos informe de los procesos de su propiedad cuyo nombre coincida con el de algún fichero que se
+encuentre en el directorio inicial del usuario.
+
+#!/bin/bash
+
+# Verificar el número correcto de argumentos
+if [ "$#" -ne 1 ]; then
+    echo "Error: Se debe proporcionar exactamente un nombre de usuario como argumento."
+    exit 1
+fi
+
+# Obtener el nombre de usuario del argumento
+username=$1
+
+# Verificar si el usuario existe
+if id "$username" &>/dev/null; then
+    # Obtener el directorio inicial del usuario
+    home_directory=$(getent passwd "$username" | cut -d: -f6)
+
+    # Verificar si el directorio inicial es válido
+    if [ -d "$home_directory" ]; then
+        # Buscar procesos de propiedad del usuario cuyo nombre coincide con algún fichero en su directorio inicial
+        ps -u "$username" -o cmd= | grep -F -f <(find "$home_directory" -maxdepth 1 -type f -exec basename {} \;)
+    else
+        echo "Error: El directorio inicial del usuario $username no es válido."
+        exit 1
+    fi
+else
+    echo "Error: El usuario $username no existe en el sistema."
+    exit 1
+fi
+
+# Finalizar correctamente
+exit 0
+
+
+Desarrolle un script en bash al que se le pase una lista de órdenes. Para cada orden de la
+lista, el script debe reportar el número de procesos que están ejecutando esa orden. En el caso de que,
+para una orden dada, no existiese un proceso, entonces se debe emitir el mensaje correspondiente por el
+canal de error y pasar a la siguiente orden de la lista.
+
+#!/bin/bash
+
+# Verificar que la lista de órdenes no está vacía
+if [ "$#" -eq 0 ]; then
+    echo "Error: La lista de órdenes está vacía. Proporcione al menos una orden como argumento."
+    exit 1
+fi
+
+# Iterar sobre las órdenes proporcionadas como argumentos
+for command in "$@"
+do
+    # Obtener el número de procesos que están ejecutando la orden
+    process_count=$(pgrep -c "$command")
+
+    # Verificar si hay al menos un proceso en ejecución
+    if [ "$process_count" -gt 0 ]; then
+        echo "La orden '$command' tiene $process_count proceso(s) en ejecución."
+    else
+        echo "Advertencia: No hay procesos en ejecución para la orden '$command'."
+    fi
+done
+
+# Finalizar correctamente
+exit 0
+
+
+

@@ -26,6 +26,31 @@ solamente el tiempo, por ejemplo "5 days".
 
 Scripts
 
+Suponga un sistema con dos discos duros como los descritos a continuación:
+/dev/sda: con dos particiones.
+/dev/sda1: partición que alberga el sistema de ficheros raíz.
+/dev/sda2: partición tipo LVM que actualmente está libre (no se usa para nada).
+/dev/sdb: con dos particiones.
+/dev/sdb1: partición tipo LVM que actualmente está libre (no se usa para nada).
+/dev/sdb2: partición tipo swap, usada como memoria de intercambio.
+Describa las órdenes necesarias para:
+1) Crear un grupo de volúmenes, etiquetado VG_ASO, formado por las particiones sda2 y sdb1.
+	vgcreate VG_ASO /dev/sda2 /dev/sdb1
+
+2) Crear un volumen lógico, etiquetado LV_ASO, que use todo el tamaño disponible.
+	lvcreate -l 100%FREE -n LV_ASO VG_ASO
+
+3) Crear un sistema de ficheros tipo ext4, etiquetado MEDIA, sobre el grupo de volúmenes.
+	mkfs.ext4 -L MEDIA /dev/VG_ASO/LV_ASO
+
+4) Montar el nuevo sistema de ficheros automáticamente en /var/media al arrancar el sistema.
+	mkdir -p /var/media
+
+	nano /etc/fstab
+	echo "/dev/VG_ASO/LV_ASO /var/media ext4 defaults 0 0" >> /etc/fstab
+	
+
+
 Desarrolle un script en bash que genere cinco sistemas de ficheros ext4 con la
 etiqueta “ALU1”, “ALU2”, etc. Dichos sistemas de ficheros estarán montados en las carpetas
 “/mnt1”, “/mnt2”, etc. Si no existen las carpetas, se deberá crearlas.
@@ -78,25 +103,25 @@ Al finalizar el ejercicio, tendrá que subir el script generado y el contenido d
 N=$1
 
 # Obtener la lista de usuarios que cumplen las condiciones
-users_to_lock=$(awk -v n=$N -F: '{
+users_to_lock=$(while IFS=: read -r username password last_change last_min last_max warn inact expire flag; do
   # Verificar que no sea la cuenta del usuario administrador
-  if ($1 != "admin" && $1 != "root") {
+  if [[ $username != "admin" && $username != "root" ]]; then
     # Verificar que no haya fecha de caducidad y la contraseña no esté bloqueada
-    if ($8 == "" && $2 != "*LK*") {
+    if [[ $expire == "" && $password != "*LK*" ]]; then
       # Obtener la última fecha de inicio de sesión y convertirla a timestamp
-      last_login_date = $9
-      if (last_login_date != "") {
-        last_login_timestamp = mktime(substr(last_login_date,1,4) " " substr(last_login_date,5,2) " " substr(last_login_date,7,2) " 00 00 00")
+      last_login_date=$(date -d @$last_min +"%Y%m%d")
+      if [[ $last_login_date != "" ]]; then
+        last_login_timestamp=$(date -d $last_login_date +"%s")
         # Calcular la diferencia en días desde la última sesión
-        days_since_last_login = (systime() - last_login_timestamp) / 86400
+        days_since_last_login=$(( ( $(date +"%s") - last_login_timestamp ) / 86400 ))
         # Imprimir el nombre del usuario si no ha iniciado sesión en los últimos N días
-        if (days_since_last_login > n) {
-          print $1
-        }
-      }
-    }
-  }
-}' /etc/shadow)
+        if (( days_since_last_login > N )); then
+          echo $username
+        fi
+      fi
+    fi
+  fi
+done < /etc/shadow)
 
 # Bloquear el acceso a las cuentas de usuario obtenidas
 for user in $users_to_lock
@@ -104,37 +129,13 @@ do
   passwd -l $user
 done
 
+
 ./bloquear_cuentas.sh 30
 
 55 23 * * 1-5 /ruta/del/script/bloquear_cuentas.sh 30
 
 
 
-Suponga un sistema con dos discos duros como los descritos a continuación:
-/dev/sda: con dos particiones.
-/dev/sda1: partición que alberga el sistema de ficheros raíz.
-/dev/sda2: partición tipo LVM que actualmente está libre (no se usa para nada).
-/dev/sdb: con dos particiones.
-/dev/sdb1: partición tipo LVM que actualmente está libre (no se usa para nada).
-/dev/sdb2: partición tipo swap, usada como memoria de intercambio.
-Describa las órdenes necesarias para:
-1) Crear un grupo de volúmenes, etiquetado VG_ASO, formado por las particiones sda2 y sdb1.
-	vgcreate VG_ASO /dev/sda2 /dev/sdb1
-
-2) Crear un volumen lógico, etiquetado LV_ASO, que use todo el tamaño disponible.
-	lvcreate -l 100%FREE -n LV_ASO VG_ASO
-
-3) Crear un sistema de ficheros tipo ext4, etiquetado MEDIA, sobre el grupo de volúmenes.
-	mkfs.ext4 -L MEDIA /dev/VG_ASO/LV_ASO
-
-4) Montar el nuevo sistema de ficheros automáticamente en /var/media al arrancar el sistema.
-	mkdir -p /var/media
-
-	nano /etc/fstab
-	echo "/dev/VG_ASO/LV_ASO /var/media ext4 defaults 0 0" >> /etc/fstab
-
-Al finalizar el ejercicio, tendrá que subir un fichero de texto plano con la secuencia de acciones a
-realizar para cumplir todas estas indicaciones.
 
 
 
@@ -155,16 +156,18 @@ fi
 
 # Obtener el límite de ficheros del usuario de referencia
 reference_user=$1
-file_limit=$(quota -u $reference_user | tail -n 1 | awk '{print $2}')
+file_limit=$(quota -u $reference_user | tail -n 1 | tr -s ' ' | cut -d ' ' -f 2)
 
 # Establecer el límite de ficheros para usuarios con UID > 1000
-users=$(awk -F: '$3 > 1000 {print $1}' /etc/passwd)
+users=$(grep -E '^[^:]+:[^:]+:[0-9]{4,}:' /etc/passwd | cut -d: -f1)
 for user in $users
 do
     setquota -u $user $file_limit $file_limit 0 0 -a
 done
 
 echo "Límite de ficheros establecido para usuarios con UID > 1000 basado en $reference_user."
+
+
 
 ./establecer_limites.sh usuario_referencia
 
