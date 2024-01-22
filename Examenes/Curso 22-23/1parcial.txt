@@ -45,6 +45,7 @@ veces. Para cada uno de estos ficheros debe mostrar una línea por pantalla que 
 orden que se especifica, la siguiente información: nombre del fichero, número de veces con que se
 repite el nombre del fichero. Las líneas que se muestren deben estar ordenadas decrecientemente por
 el número de veces con que se repite el nombre del fichero.
+find . -type -f -exec basename {} ;\ | uniq -c | grep -E '^\s*[2-9]' | sort -nr
 
 Mostrar por pantalla los procesos del sistema que no son propiedad del usuario
 "root". Para cada uno de estos procesos se deberá mostrar, sólo y en el orden que se especifica, la
