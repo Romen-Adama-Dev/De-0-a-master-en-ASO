@@ -15,8 +15,8 @@ Este repositorio contiene recursos y ejemplos de código para ayudarte a mejorar
 
 4. **Quizzi Preguntas Teoria Tests**
 
-   - [Quiz Teórico ASO - Nivel Avanzado](https://quizizz.com/admin/quiz/65380e98a4d64840784f4f41?at=65ad736c68573ae0c703387b)
-   - [ASO Segundo Parcial](https://quizizz.com/admin/quiz/65a4ff4460a1caffa9407521/aso-segundo-parcial?at=65a557e244b7deb44663bf49)
+   - [Quizzi bloque 1](https://quizizz.com/admin/quiz/65380e98a4d64840784f4f41?at=65ad736c68573ae0c703387b)
+   - [Quizzi bloque 2](https://quizizz.com/admin/quiz/65a4ff4460a1caffa9407521/aso-segundo-parcial?at=65a557e244b7deb44663bf49)
 
 
 ## Instrucciones de Uso
